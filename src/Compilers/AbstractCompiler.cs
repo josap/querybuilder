@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SqlKata.Formatters;
 
 namespace SqlKata.Compilers
 {
@@ -9,6 +10,10 @@ namespace SqlKata.Compilers
         public Inflector Inflector { get; protected set; }
         public string TablePrefix { get; set; } = "";
         public string DateFormat { get; set; } = "yyyy-MM-dd HH:mm:ss";
+        public Dictionary<Type, Formatter> Formatters = new Dictionary<Type, Formatter>
+        {
+            {typeof(DateTime), new DateTimeFormatter()},
+        };
         public bool IsDebug = false;
         protected string separator
         {
