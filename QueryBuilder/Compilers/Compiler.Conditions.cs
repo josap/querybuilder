@@ -117,7 +117,7 @@ namespace SqlKata.QueryBuilder.Compilers
                 : sql;
         }
 
-        protected virtual string CompileNestedCondition<Q>(NestedCondition<Q> x) where Q : BaseQuery<Q>
+        protected virtual string CompileNestedCondition(NestedCondition x)
         {
             if (!x.Query.HasComponent("where", EngineCode))
             {
@@ -177,7 +177,7 @@ namespace SqlKata.QueryBuilder.Compilers
             return Wrap(item.Column) + " " + op;
         }
 
-        protected virtual string CompileExistsCondition<T>(ExistsCondition<T> item) where T : BaseQuery<T>
+        protected virtual string CompileExistsCondition<T>(ExistsCondition item) where T : BaseQuery<T>
         {
             var op = item.IsNot ? "NOT EXISTS" : "EXISTS";
             return op + " (" + CompileQuery(item.Query) + ")";

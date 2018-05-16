@@ -2,104 +2,104 @@ using System;
 
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query
+    public static class QueryCombine
     {
 
-        public Query Combine(string operation, bool all, Query query)
+        public static Query Combine(this Query query, string operation, bool all, Query target)
         {
-            if (this.Method != "select" || query.Method != "select")
+            if (query.Method != "select" || target.Method != "select")
             {
                 throw new InvalidOperationException("Only select queries can be combined.");
             }
 
-            return AddComponent("combine", new Combine
+            return query.AddComponent("combine", new Combine
             {
-                Query = query,
+                Query = target,
                 Operation = operation,
                 All = all,
             });
         }
 
-        public Query CombineRaw(string sql, params object[] bindings)
+        public static Query CombineRaw(this Query query, string sql, params object[] bindings)
         {
-            if (this.Method != "select")
+            if (query.Method != "select")
             {
                 throw new InvalidOperationException("Only select queries can be combined.");
             }
 
-            return AddComponent("combine", new RawCombine
+            return query.AddComponent("combine", new RawCombine
             {
                 Expression = sql,
                 Bindings = Helper.Flatten(bindings).ToArray(),
             });
         }
 
-        public Query Union(Query query, bool all = false)
+        public static Query Union(this Query query, Query target, bool all = false)
         {
-            return Combine("union", all, query);
+            return query.Combine("union", all, target);
         }
 
-        public Query UnionAll(Query query)
+        public static Query UnionAll(this Query query, Query target)
         {
-            return Union(query, true);
+            return query.Union(target, true);
         }
 
-        public Query Union(Func<Query, Query> callback, bool all = false)
+        public static Query Union(this Query query, Func<Query, Query> callback, bool all = false)
         {
-            var query = callback.Invoke(new Query());
-            return Union(query, all);
+            var target = callback.Invoke(new Query());
+            return query.Union(target, all);
         }
 
-        public Query UnionAll(Func<Query, Query> callback)
+        public static Query UnionAll(this Query query, Func<Query, Query> callback)
         {
-            return Union(callback, true);
+            return query.Union(callback, true);
         }
 
-        public Query UnionRaw(string sql, params object[] bindings) => CombineRaw(sql, bindings);
+        public static Query UnionRaw(this Query query, string sql, params object[] bindings) => query.CombineRaw(sql, bindings);
 
-        public Query Except(Query query, bool all = false)
+        public static Query Except(this Query query, Query target, bool all = false)
         {
-            return Combine("except", all, query);
+            return query.Combine("except", all, target);
         }
 
-        public Query ExceptAll(Query query)
+        public static Query ExceptAll(this Query query, Query target)
         {
-            return Except(query, true);
+            return query.Except(target, true);
         }
 
-        public Query Except(Func<Query, Query> callback, bool all = false)
+        public static Query Except(this Query query, Func<Query, Query> callback, bool all = false)
         {
-            var query = callback.Invoke(new Query());
-            return Except(query, all);
+            var target = callback.Invoke(new Query());
+            return query.Except(target, all);
         }
 
-        public Query ExceptAll(Func<Query, Query> callback)
+        public static Query ExceptAll(this Query query, Func<Query, Query> callback)
         {
-            return Except(callback, true);
+            return query.Except(callback, true);
         }
-        public Query ExceptRaw(string sql, params object[] bindings) => CombineRaw(sql, bindings);
+        public static Query ExceptRaw(this Query query, string sql, params object[] bindings) => query.CombineRaw(sql, bindings);
 
-        public Query Intersect(Query query, bool all = false)
+        public static Query Intersect(this Query query, Query target, bool all = false)
         {
-            return Combine("intersect", all, query);
-        }
-
-        public Query IntersectAll(Query query)
-        {
-            return Intersect(query, true);
+            return query.Combine("intersect", all, target);
         }
 
-        public Query Intersect(Func<Query, Query> callback, bool all = false)
+        public static Query IntersectAll(this Query query, Query target)
         {
-            var query = callback.Invoke(new Query());
-            return Intersect(query, all);
+            return query.Intersect(target, true);
         }
 
-        public Query IntersectAll(Func<Query, Query> callback)
+        public static Query Intersect(this Query query, Func<Query, Query> callback, bool all = false)
         {
-            return Intersect(callback, true);
+            var target = callback.Invoke(new Query());
+            return query.Intersect(query, all);
         }
-        public Query IntersectRaw(string sql, params object[] bindings) => CombineRaw(sql, bindings);
+
+        public static Query IntersectAll(this Query query, Func<Query, Query> callback)
+        {
+            return query.Intersect(callback, true);
+        }
+        public static Query IntersectRaw(this Query query, string sql, params object[] bindings) => query.CombineRaw(sql, bindings);
 
     }
 }

@@ -1,28 +1,28 @@
 using System;
+using SqlKata.Expressions;
 
 namespace SqlKata.QueryBuilder
 {
-    public abstract class AbstractJoin : AbstractClause
+    public class JoinClause : AbstractClause
     {
-
-    }
-
-    public class BaseJoin : AbstractJoin
-    {
-        public Join Join { get; set; }
+        public string Type { get; set; }
+        public Expression Expression { get; set; }
+        public Expression Conditions { get; set; }
 
         public override AbstractClause Clone()
         {
-            return new BaseJoin
+            return new JoinClause
             {
                 Engine = Engine,
-                Join = Join.Clone(),
                 Component = Component,
+                Type = Type,
+                Expression = Expression.Clone(),
+                Conditions = Conditions,
             };
         }
     }
 
-    public class DeepJoin : AbstractJoin
+    public class DeepJoin : JoinClause
     {
         public string Type { get; set; }
         public string Expression { get; set; }

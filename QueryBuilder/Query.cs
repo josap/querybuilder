@@ -1,55 +1,163 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using SqlKata.Expressions;
 
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query : BaseQuery<Query>
+    public class Query
     {
         public bool IsDistinct { get; set; } = false;
         public string QueryAlias { get; set; }
         public string Method { get; set; } = "select";
+        public ConditionBuilder WhereBuilder { get; set; }
+        public ConditionBuilder HavingBuilder { get; set; }
+        public List<Expression> Expressions { get; set; } = new List<Expression>();
+        public List<AbstractClause> Clauses { get; set; } = new List<AbstractClause>();
+        public string EngineScope = null;
 
-        protected override string[] bindingOrder
+        public Query SetEngineScope(string engine)
         {
-            get
-            {
-                if (Method == "insert")
-                {
-                    return new[] {
-                        "cte", "insert",
-                    };
-                }
+            this.EngineScope = engine;
 
-                if (Method == "update")
-                {
-                    return new[] {
-                        "cte", "update", "where",
-                    };
-                }
+            // this.Clauses = this.Clauses.Select(x =>
+            // {
+            //     x.Engine = engine;
+            //     return x;
+            // }).ToList();
 
-                if (Method == "delete")
-                {
-                    return new[] {
-                        "cte", "where",
-                    };
-                }
-
-                return new[] {
-                    "cte",
-                    "select",
-                    "from",
-                    "join",
-                    "where",
-                    "group",
-                    "having",
-                    "order",
-                    "limit",
-                    "combine", // union, except, intersect
-                };
-            }
+            return this;
         }
 
-        protected List<string> operators = new List<string> {
+        /// <summary>
+        /// Add a component clause to the query.
+        /// </summary>
+        /// <param name="component"></param>
+        /// <param name="clause"></param>
+        /// <returns></returns>
+        public Query AddComponent(string component, AbstractClause clause, string engineCode = null)
+        {
+            if (engineCode == null)
+            {
+                engineCode = EngineScope;
+            }
+
+            clause.Engine = engineCode;
+            clause.Component = component;
+            Clauses.Add(clause);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Get the list of clauses for a component.
+        /// </summary>
+        /// <returns></returns>
+        public List<C> GetComponents<C>(string component, string engineCode = null) where C : AbstractClause
+        {
+            if (engineCode == null)
+            {
+                engineCode = EngineScope;
+            }
+
+            var clauses = Clauses
+                .Where(x => x.Component == component)
+                .Where(x => engineCode == null || x.Engine == null || engineCode == x.Engine)
+                .Cast<C>();
+
+            return clauses.ToList();
+        }
+
+        /// <summary>
+        /// Get the list of clauses for a component.
+        /// </summary>
+        /// <param name="component"></param>
+        /// <returns></returns>
+        public List<AbstractClause> GetComponents(string component, string engineCode = null)
+        {
+            if (engineCode == null)
+            {
+                engineCode = EngineScope;
+            }
+
+            return GetComponents<AbstractClause>(component, engineCode);
+        }
+
+        /// <summary>
+        /// Get a single component clause from the query.
+        /// </summary>
+        /// <returns></returns>
+        public C GetOneComponent<C>(string component, string engineCode = null) where C : AbstractClause
+        {
+            if (engineCode == null)
+            {
+                engineCode = EngineScope;
+            }
+
+            return GetComponents<C>(component, engineCode)
+            .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Get a single component clause from the query.
+        /// </summary>
+        /// <param name="component"></param>
+        /// <returns></returns>
+        public AbstractClause GetOneComponent(string component, string engineCode = null)
+        {
+            if (engineCode == null)
+            {
+                engineCode = EngineScope;
+            }
+
+            return GetOneComponent<AbstractClause>(component, engineCode);
+        }
+
+        /// <summary>
+        /// Return wether the query has clauses for a component.
+        /// </summary>
+        /// <param name="component"></param>
+        /// <returns></returns>
+        public bool HasComponent(string component, string engineCode = null)
+        {
+            if (engineCode == null)
+            {
+                engineCode = EngineScope;
+            }
+
+            return GetComponents(component, engineCode).Any();
+        }
+
+        /// <summary>
+        /// Remove all clauses for a component.
+        /// </summary>
+        /// <param name="component"></param>
+        /// <returns></returns>
+        public Query ClearComponent(string component, string engineCode = null)
+        {
+            if (engineCode == null)
+            {
+                engineCode = EngineScope;
+            }
+
+            Clauses = Clauses
+                .Where(x => !(x.Component == component && (engineCode == null || x.Engine == null || engineCode == x.Engine)))
+                .ToList();
+
+            return this;
+        }
+
+        public static object BackupNullValues(object x)
+        {
+            return x ?? new NullValue();
+        }
+
+        public static object RestoreNullValues(object x)
+        {
+            return x is NullValue ? null : x;
+        }
+
+        public List<string> operators = new List<string> {
             "=", "<", ">", "<=", ">=", "<>", "!=",
             "like", "like binary", "not like", "between", "ilike",
             "&", "|", "^", "<<", ">>",
@@ -58,21 +166,26 @@ namespace SqlKata.QueryBuilder
             "not similar to", "not ilike", "~~*", "!~~*",
         };
 
-        public Query() : base()
+        public Query()
         {
         }
 
-        public Query(string table) : base()
+        public Query(string table)
         {
-            From(table);
+            this.From(table);
         }
 
-        public override Query Clone()
+        public Query Clone()
         {
-            var clone = base.Clone();
+            var clone = new Query().SetEngineScope(EngineScope);
+
+            clone.Clauses = this.Clauses.Select(x => x.Clone()).ToList();
+
             clone.QueryAlias = QueryAlias;
             clone.IsDistinct = IsDistinct;
             clone.Method = Method;
+            clone.WhereBuilder = WhereBuilder;
+            clone.HavingBuilder = HavingBuilder;
             return clone;
         }
 
@@ -92,51 +205,6 @@ namespace SqlKata.QueryBuilder
             EngineScope = null;
 
             return result;
-        }
-
-        public Query With(Query query)
-        {
-            // Clear query alias and add it to the containing clause
-            if (string.IsNullOrWhiteSpace(query.QueryAlias))
-            {
-                throw new InvalidOperationException("No Alias found for the CTE query");
-            }
-
-            var alias = query.QueryAlias.Trim();
-
-            // clear the query alias
-            query.QueryAlias = null;
-
-            return AddComponent("cte", new QueryFromClause
-            {
-                Query = query.SetEngineScope(EngineScope),
-                Alias = alias,
-            });
-        }
-
-        public Query With(Func<Query, Query> fn)
-        {
-            return With(fn.Invoke(new Query()));
-        }
-
-        public Query With(string alias, Query query)
-        {
-            return With(query.As(alias));
-        }
-
-        public Query With(string alias, Func<Query, Query> fn)
-        {
-            return With(alias, fn.Invoke(new Query()));
-        }
-
-        public Query WithRaw(string alias, string sql, params object[] bindings)
-        {
-            return AddComponent("cte", new RawFromClause
-            {
-                Alias = alias,
-                Expression = sql,
-                Bindings = Helper.Flatten(bindings).ToArray(),
-            });
         }
 
         public Query Limit(int value)
@@ -214,14 +282,13 @@ namespace SqlKata.QueryBuilder
         /// <param name="condition"></param>
         /// <param name="callback"></param>
         /// <returns></returns>
-        public Query When(bool condition, Func<Query, Query> callback)
+        public Query When(bool condition,
+            Func<Query, Query> callback = null,
+            Func<Query, Query> fallback = null)
         {
-            if (condition)
-            {
-                return callback.Invoke(this);
-            }
+            var fn = condition ? callback : fallback;
 
-            return this;
+            return fn is null ? this : fn(this);
         }
 
         /// <summary>
@@ -232,83 +299,19 @@ namespace SqlKata.QueryBuilder
         /// <returns></returns>
         public Query WhenNot(bool condition, Func<Query, Query> callback)
         {
-            if (!condition)
-            {
-                return callback.Invoke(this);
-            }
+            return When(condition, null, callback);
+        }
 
+        public Query Where(Action<ConditionBuilder> callback)
+        {
+            callback(WhereBuilder);
             return this;
         }
 
-        public Query OrderBy(params string[] columns)
+        public Query Having(Action<ConditionBuilder> callback)
         {
-            foreach (var column in columns)
-            {
-                AddComponent("order", new OrderBy
-                {
-                    Column = column,
-                    Ascending = true
-                });
-            }
-
+            callback(HavingBuilder);
             return this;
-        }
-
-        public Query OrderByDesc(params string[] columns)
-        {
-            foreach (var column in columns)
-            {
-                AddComponent("order", new OrderBy
-                {
-                    Column = column,
-                    Ascending = false
-                });
-            }
-
-            return this;
-        }
-
-        public Query OrderByRaw(string expression, params object[] bindings)
-        {
-            return AddComponent("order", new RawOrderBy
-            {
-                Expression = expression,
-                Bindings = Helper.Flatten(bindings).ToArray()
-            });
-        }
-
-        public Query OrderByRandom(string seed)
-        {
-            return AddComponent("order", new OrderByRandom { });
-        }
-
-        public Query GroupBy(params string[] columns)
-        {
-            foreach (var column in columns)
-            {
-                AddComponent("group", new Column
-                {
-                    Name = column
-                });
-            }
-
-            return this;
-        }
-
-        public Query GroupByRaw(string expression, params object[] bindings)
-        {
-            AddComponent("group", new RawColumn
-            {
-                Expression = expression,
-                Bindings = bindings,
-            });
-
-            return this;
-        }
-
-        public override Query NewQuery()
-        {
-            return new Query().SetEngineScope(EngineScope);
         }
 
     }

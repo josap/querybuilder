@@ -1,82 +1,64 @@
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query
+    public static class QueryHaving
     {
-        public Query Having<T>(string column, string op, T value)
+        public static Query Having(this Query query, string column, string op, object value)
         {
-
-            // If the value is "null", we will just assume the developer wants to add a
-            // having null clause to the query. So, we will allow a short-cut here to
-            // that method for convenience so the developer doesn't have to check.
-            if (value == null)
-            {
-                return Not(op != "=").HavingNull(column);
-            }
-
-            return AddComponent("having", new BasicCondition<T>
-            {
-                Column = column,
-                Operator = op,
-                Value = value,
-                IsOr = getOr(),
-                IsNot = getNot()
-            });
+            return query.Having(q => q.Where(column, op, value));
         }
 
-        public Query OrHaving(string column, string op, object value)
+        public static Query Having(this Query query, string column, object value)
         {
-            return Or().Having(column, op, value);
+            return query.Having(column, "=", value);
         }
 
-        public Query HavingNot(string column, string op, object value)
+        public static Query HavingNot(this Query query, string column, string op, object value)
         {
-            return Not(true).Having(column, op, value);
+            return query.Having(q => q.WhereNot(column, op, value));
         }
 
-        public Query OrHavingNot(string column, string op, object value)
+        public static Query HavingNot(this Query query, string column, object value)
         {
-            return Or().Not(true).Having(column, op, value);
+            return query.HavingNot(column, "=", value);
         }
 
-        public Query HavingNull(string column)
+        public static Query OrHaving(this Query query, string column, string op, object value)
         {
-            return AddComponent("having", new NullCondition
-            {
-                Column = column,
-                IsOr = getOr(),
-                IsNot = getNot(),
-            });
+            return query.Having(q => q.OrWhere(column, op, value));
         }
 
-        public Query OrHavingNull(string column)
+        public static Query OrHaving(this Query query, string column, object value)
         {
-            return Or().HavingNull(column);
+            return query.OrHaving(column, "=", value);
         }
 
-        public Query HavingNotNull(string column)
+        public static Query OrHavingNot(this Query query, string column, string op, object value)
         {
-            return Not(true).HavingNull(column);
+            return query.Having(q => q.OrWhereNot(column, op, value));
         }
 
-        public Query OrHavingNotNull(string column)
+        public static Query OrHavingNot(this Query query, string column, object value)
         {
-            return Or().Not(true).HavingNull(column);
+            return query.OrWhereNot(column, "=", value);
         }
 
-        public Query HavingRaw(string expression, params object[] bindings)
+        public static Query HavingNull(this Query query, string column)
         {
-            AddComponent("having", new RawCondition
-            {
-                Expression = expression,
-                Bindings = Helper.Flatten(bindings).ToArray()
-            });
-
-            return this;
+            return query.Having(q => q.WhereNull(column));
         }
 
-        public Query OrHavingRaw(string expression, params object[] bindings)
+        public static Query HavingNotNull(this Query query, string column)
         {
-            return Or().HavingRaw(expression, bindings);
+            return query.Having(q => q.WhereNotNull(column));
+        }
+
+        public static Query OrHavingNull(this Query query, string column)
+        {
+            return query.Having(q => q.OrWhereNull(column));
+        }
+        public static Query OrHavingNotNull(this Query query, string column)
+        {
+            return query.Having(q => q.OrWhereNotNull(column));
         }
     }
 }

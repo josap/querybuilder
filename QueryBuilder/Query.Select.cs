@@ -1,57 +1,60 @@
 using System;
+using System.Linq;
+using SqlKata.Expressions;
 
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query
+    public static class QuerySelect
     {
-
-        public Query Select(params string[] columns)
+        public static Query Select(this Query query, Expression expression, string alias = null)
         {
-            Method = "select";
+            query.Method = "select";
+
+            return query.AddComponent("columns", new SelectColumnClause
+            {
+                Expression = expression,
+                Alias = alias,
+            });
+        }
+
+        public static Query Select(this Query query, params string[] columns)
+        {
 
             foreach (var column in columns)
             {
-                AddComponent("select", new Column
-                {
-                    Name = column
-                });
+                query.Select(new IdentifierExpression(column), column);
             }
 
-            return this;
+            return query;
         }
 
         /// <summary>
         /// Add a new "raw" select expression to the query.
         /// </summary>
         /// <returns></returns>
-        public Query SelectRaw(string expression, params object[] bindings)
+        public static Query SelectRaw(this Query query, string expression, params object[] bindings)
         {
-            Method = "select";
-
-            AddComponent("select", new RawColumn
-            {
-                Expression = expression,
-                Bindings = Helper.Flatten(bindings).ToArray()
-            });
-
-            return this;
+            return query.Select(new RawExpression(expression, bindings.ToList()));
         }
 
-        public Query Select(Query query, string alias)
+        public static Query Select(this Query query, Query fromQuery, string alias = null)
         {
-            Method = "select";
-
-            AddComponent("select", new QueryColumn
+            if (alias != null)
             {
-                Query = query.As(alias).SetEngineScope(EngineScope),
-            });
+                fromQuery.As(alias);
+            }
 
-            return this;
+            var expression = new QueryExpression
+            {
+                Query = fromQuery,
+            };
+
+            return query.Select(expression, alias);
         }
 
-        public Query Select(Func<Query, Query> callback, string alias)
+        public static Query Select(this Query query, Func<Query, Query> callback, string alias = null)
         {
-            return Select(callback.Invoke(NewChild()), alias);
+            return Select(callback(new Query()), alias);
         }
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using SqlKata.Execution;
 using SqlKata.QueryBuilder;
 using SqlKata.QueryBuilder.Compilers;
 using Xunit;

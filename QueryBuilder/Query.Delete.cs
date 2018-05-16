@@ -1,11 +1,11 @@
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query
+    public static class QueryDelete
     {
-        public Query AsDelete()
+        public static Query AsDelete(this Query query)
         {
-            Method = "delete";
-            return this;
+            query.Method = "delete";
+            return query;
         }
 
     }

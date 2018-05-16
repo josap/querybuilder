@@ -104,7 +104,7 @@ namespace SqlKata.QueryBuilder
     /// <summary>
     /// Represents a comparison between a column and a full "subquery".
     /// </summary>
-    public class QueryCondition<T> : AbstractCondition where T : BaseQuery<T>
+    public class QueryCondition<T> : AbstractCondition
     {
         public string Column { get; set; }
         public string Operator { get; set; }
@@ -217,12 +217,12 @@ namespace SqlKata.QueryBuilder
     /// Represents a "nested" clause condition.
     /// i.e OR (myColumn = "A")
     /// </summary>
-    public class NestedCondition<T> : AbstractCondition where T : BaseQuery<T>
+    public class NestedCondition : AbstractCondition
     {
-        public T Query { get; set; }
+        public Query Query { get; set; }
         public override AbstractClause Clone()
         {
-            return new NestedCondition<T>
+            return new NestedCondition
             {
                 Engine = Engine,
                 Query = Query.Clone(),
@@ -236,14 +236,14 @@ namespace SqlKata.QueryBuilder
     /// <summary>
     /// Represents an "exists sub query" clause condition.
     /// </summary>
-    public class ExistsCondition<T> : AbstractCondition where T : BaseQuery<T>
+    public class ExistsCondition : AbstractCondition
     {
-        public T Query { get; set; }
+        public Query Query { get; set; }
 
         /// <inheritdoc />
         public override AbstractClause Clone()
         {
-            return new ExistsCondition<T>
+            return new ExistsCondition
             {
                 Engine = Engine,
                 Query = Query.Clone(),
@@ -254,7 +254,7 @@ namespace SqlKata.QueryBuilder
         }
     }
 
-    public class RawCondition : AbstractCondition, IRaw
+    public class RawCondition : AbstractCondition
     {
         public string Expression { get; set; }
         public object[] Bindings { set; get; }

@@ -4,12 +4,12 @@ using System.Linq;
 
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query
+    public static class QueryInsert
     {
-        public Query AsInsert(IEnumerable<string> columns, IEnumerable<object> values)
+        public static Query AsInsert(this Query query, IEnumerable<string> columns, IEnumerable<object> values)
         {
             var columnsList = columns?.ToList();
-            var valuesList = values?.Select(BackupNullValues).ToList();
+            var valuesList = values?.Select(Query.BackupNullValues).ToList();
 
             if ((columnsList?.Count ?? 0) == 0 || (valuesList?.Count ?? 0) == 0)
             {
@@ -21,33 +21,30 @@ namespace SqlKata.QueryBuilder
                 throw new InvalidOperationException("Columns count should be equal to Values count");
             }
 
-            Method = "insert";
+            query.Method = "insert";
 
-            ClearComponent("insert").AddComponent("insert", new InsertClause
+            return query.ClearComponent("insert").AddComponent("insert", new InsertClause
             {
                 Columns = columnsList,
                 Values = valuesList
             });
 
-            return this;
         }
 
-        public Query AsInsert(IReadOnlyDictionary<string, object> data)
+        public static Query AsInsert(this Query query, IReadOnlyDictionary<string, object> data)
         {
             if (data == null || data.Count == 0)
             {
                 throw new InvalidOperationException("Values dictionary cannot be null or empty");
             }
 
-            Method = "insert";
+            query.Method = "insert";
 
-            ClearComponent("insert").AddComponent("insert", new InsertClause
+            return query.ClearComponent("insert").AddComponent("insert", new InsertClause
             {
                 Columns = data.Keys.ToList(),
-                Values = data.Values.Select(BackupNullValues).ToList()
+                Values = data.Values.Select(Query.BackupNullValues).ToList()
             });
-
-            return this;
         }
 
         /// <summary>
@@ -56,7 +53,7 @@ namespace SqlKata.QueryBuilder
         /// <param name="columns"></param>
         /// <param name="valuesCollection"></param>
         /// <returns></returns>
-        public Query AsInsert(IEnumerable<string> columns, IEnumerable<IEnumerable<object>> valuesCollection)
+        public static Query AsInsert(this Query query, IEnumerable<string> columns, IEnumerable<IEnumerable<object>> valuesCollection)
         {
             var columnsList = columns?.ToList();
             var valuesCollectionList = valuesCollection?.ToList();
@@ -66,26 +63,26 @@ namespace SqlKata.QueryBuilder
                 throw new InvalidOperationException("Columns and valuesCollection cannot be null or empty");
             }
 
-            Method = "insert";
+            query.Method = "insert";
 
-            ClearComponent("insert");
+            query.ClearComponent("insert");
 
             foreach (var values in valuesCollectionList)
             {
-                var valuesList = values.Select(BackupNullValues).ToList();
+                var valuesList = values.Select(Query.BackupNullValues).ToList();
                 if (columnsList.Count != valuesList.Count)
                 {
                     throw new InvalidOperationException("Columns count should be equal to each Values count");
                 }
 
-                AddComponent("insert", new InsertClause
+                query.AddComponent("insert", new InsertClause
                 {
                     Columns = columnsList,
                     Values = valuesList
                 });
             }
 
-            return this;
+            return query;
         }
 
         /// <summary>
@@ -94,17 +91,16 @@ namespace SqlKata.QueryBuilder
         /// <param name="columns"></param>
         /// <param name="query"></param>
         /// <returns></returns>
-        public Query AsInsert(IEnumerable<string> columns, Query query)
+        public static Query AsInsert(this Query query, IEnumerable<string> columns, Query fromQuery)
         {
-            Method = "insert";
+            query.Method = "insert";
 
-            ClearComponent("insert").AddComponent("insert", new InsertQueryClause
+            return query.ClearComponent("insert").AddComponent("insert", new InsertQueryClause
             {
                 Columns = columns.ToList(),
-                Query = query
+                Query = fromQuery
             });
 
-            return this;
         }
 
     }

@@ -69,15 +69,15 @@ namespace SqlKata.QueryBuilder.Compilers
 
             if (limitOffset.HasLimit())
             {
-                query.WhereBetween(
-                    rowNumberColName,
-                    limitOffset.Offset + 1,
-                    limitOffset.Limit + limitOffset.Offset
-                );
+                // query.WhereBetween(
+                //     rowNumberColName,
+                //     limitOffset.Offset + 1,
+                //     limitOffset.Limit + limitOffset.Offset
+                // );
             }
             else
             {
-                query.Where(rowNumberColName, ">=", limitOffset.Offset + 1);
+                // query.Where(rowNumberColName, ">=", limitOffset.Offset + 1);
             }
 
             limitOffset.Clear();

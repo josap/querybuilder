@@ -44,7 +44,7 @@ namespace SqlKata.QueryBuilder
         }
     }
 
-    public class RawCombine : AbstractCombine, IRaw
+    public class RawCombine : AbstractCombine
     {
         private object[] _bindings;
 

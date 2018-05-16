@@ -2,24 +2,23 @@ using System.Linq;
 
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query
+    public static class QueryAggregate
     {
-        public Query AsAggregate(string type, params string[] columns)
+        public static Query AsAggregate(this Query query, string type, params string[] columns)
         {
 
-            Method = "aggregate";
+            query.Method = "aggregate";
 
-            this.ClearComponent("aggregate")
+            return query.ClearComponent("aggregate")
             .AddComponent("aggregate", new AggregateClause
             {
                 Type = type,
                 Columns = columns.ToList()
             });
 
-            return this;
         }
 
-        public Query AsCount(params string[] columns)
+        public static Query AsCount(this Query query, params string[] columns)
         {
             var cols = columns.ToList();
 
@@ -28,31 +27,31 @@ namespace SqlKata.QueryBuilder
                 cols.Add("*");
             }
 
-            return AsAggregate("count", cols.ToArray());
+            return query.AsAggregate("count", cols.ToArray());
         }
 
-        public Query AsAvg(string column)
+        public static Query AsAvg(this Query query, string column)
         {
-            return AsAggregate("avg", column);
+            return query.AsAggregate("avg", column);
         }
-        public Query AsAverage(string column)
+        public static Query AsAverage(this Query query, string column)
         {
-            return AsAvg(column);
-        }
-
-        public Query AsSum(string column)
-        {
-            return AsAggregate("sum", column);
+            return query.AsAvg(column);
         }
 
-        public Query AsMax(string column)
+        public static Query AsSum(this Query query, string column)
         {
-            return AsAggregate("max", column);
+            return query.AsAggregate("sum", column);
         }
 
-        public Query AsMin(string column)
+        public static Query AsMax(this Query query, string column)
         {
-            return AsAggregate("min", column);
+            return query.AsAggregate("max", column);
+        }
+
+        public static Query AsMin(this Query query, string column)
+        {
+            return query.AsAggregate("min", column);
         }
     }
 }

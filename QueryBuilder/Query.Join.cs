@@ -1,75 +1,47 @@
 using System;
+using SqlKata.Expressions;
 
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query
+    public static class QueryJoin
     {
-
-        private Query Join(Func<Join, Join> callback)
+        public static Query Join(this Query query, Expression expression, ConditionBuilder conditionBuilder, string type = "inner")
         {
-            var join = callback.Invoke(new Join().AsInner());
-
-            return AddComponent("join", new BaseJoin
+            return query.AddComponent("join", new JoinClause
             {
-                Join = join.SetEngineScope(EngineScope)
+                Type = type,
+                Expression = expression,
+                Conditions = conditionBuilder.Evaluate(),
             });
         }
-
-        public Query Join(
-            string table,
-            string first,
-            string second,
-            string op = "=",
-            string type = "inner"
-        )
+        public static Query Join(this Query query, string table, ConditionBuilder conditionBuilder, string type = "inner")
         {
-            return Join(j => j.JoinWith(table).WhereColumns(first, op, second).AsType(type));
+            return query.Join(new IdentifierExpression(table), conditionBuilder, type);
         }
 
-        public Query Join(string table, Func<Join, Join> callback, string type = "inner")
+        public static Query Join(this Query query, string table, Func<ConditionBuilder, ConditionBuilder> callback, string type = "inner")
         {
-            return Join(j => j.JoinWith(table).Where(callback).AsType(type));
+            return query.Join(new IdentifierExpression(table), callback(new ConditionBuilder()), type);
         }
 
-        public Query Join(Query query, Func<Join, Join> onCallback, string type = "inner")
+        public static Query Join(this Query query, string table, string left, string op, string right, string type = "inner")
         {
-            return Join(j => j.JoinWith(query).Where(onCallback).AsType(type));
+            var conditions = new ConditionBuilder().WhereColumns(left, op, right);
+            return query.Join(table, conditions, type);
         }
 
-        public Query LeftJoin(string table, string first, string second, string op = "=")
+        public static Query Join(this Query query, string table, string left, string right, string type = "inner")
         {
-            return Join(table, first, second, op, "left");
+            return query.Join(table, left, "=", right, type);
         }
 
-        public Query LeftJoin(string table, Func<Join, Join> callback)
+        public static Query Join(this Query query, Query join, ConditionBuilder conditionBuilder, string type = "inner")
         {
-            return Join(table, callback, "left");
+            return query.Join(new QueryExpression { Query = query }, conditionBuilder, type);
         }
-
-        public Query LeftJoin(Query query, Func<Join, Join> onCallback)
+        public static Query Join(this Query query, Query join, Func<ConditionBuilder, ConditionBuilder> callback, string type = "inner")
         {
-            return Join(query, onCallback, "left");
+            return query.Join(new QueryExpression { Query = query }, callback(new ConditionBuilder()), type);
         }
-
-        public Query RightJoin(string table, string first, string second, string op = "=")
-        {
-            return Join(table, first, second, op, "right");
-        }
-
-        public Query RightJoin(string table, Func<Join, Join> callback)
-        {
-            return Join(table, callback, "right");
-        }
-
-        public Query RightJoin(Query query, Func<Join, Join> onCallback)
-        {
-            return Join(query, onCallback, "right");
-        }
-
-        public Query CrossJoin(string table)
-        {
-            return Join(j => j.JoinWith(table).AsCross());
-        }
-
     }
 }

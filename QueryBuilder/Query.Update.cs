@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace SqlKata.QueryBuilder
 {
-    public partial class Query
+    public static class QueryUpdate
     {
 
 
-        public Query AsUpdate(IEnumerable<string> columns, IEnumerable<object> values)
+        public static Query AsUpdate(this Query query, IEnumerable<string> columns, IEnumerable<object> values)
         {
 
             if ((columns?.Count() ?? 0) == 0 || (values?.Count() ?? 0) == 0)
@@ -21,18 +21,17 @@ namespace SqlKata.QueryBuilder
                 throw new InvalidOperationException("Columns count should be equal to Values count");
             }
 
-            Method = "update";
+            query.Method = "update";
 
-            ClearComponent("update").AddComponent("update", new InsertClause
+            return query.ClearComponent("update").AddComponent("update", new InsertClause
             {
                 Columns = columns.ToList(),
-                Values = values.Select(BackupNullValues).ToList()
+                Values = values.Select(Query.BackupNullValues).ToList()
             });
 
-            return this;
         }
 
-        public Query AsUpdate(IReadOnlyDictionary<string, object> data)
+        public static Query AsUpdate(this Query query, IReadOnlyDictionary<string, object> data)
         {
 
             if (data == null || data.Count == 0)
@@ -40,15 +39,14 @@ namespace SqlKata.QueryBuilder
                 throw new InvalidOperationException("Values dictionary cannot be null or empty");
             }
 
-            Method = "update";
+            query.Method = "update";
 
-            ClearComponent("update").AddComponent("update", new InsertClause
+            return query.ClearComponent("update").AddComponent("update", new InsertClause
             {
                 Columns = data.Keys.ToList(),
-                Values = data.Values.Select(BackupNullValues).ToList(),
+                Values = data.Values.Select(Query.BackupNullValues).ToList(),
             });
 
-            return this;
         }
 
     }
