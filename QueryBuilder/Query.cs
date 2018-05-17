@@ -10,9 +10,6 @@ namespace SqlKata.QueryBuilder
         public bool IsDistinct { get; set; } = false;
         public string QueryAlias { get; set; }
         public string Method { get; set; } = "select";
-        public ConditionBuilder WhereBuilder { get; set; }
-        public ConditionBuilder HavingBuilder { get; set; }
-        public List<Expression> Expressions { get; set; } = new List<Expression>();
         public List<AbstractClause> Clauses { get; set; } = new List<AbstractClause>();
         public string EngineScope = null;
 
@@ -184,8 +181,6 @@ namespace SqlKata.QueryBuilder
             clone.QueryAlias = QueryAlias;
             clone.IsDistinct = IsDistinct;
             clone.Method = Method;
-            clone.WhereBuilder = WhereBuilder;
-            clone.HavingBuilder = HavingBuilder;
             return clone;
         }
 
@@ -300,18 +295,6 @@ namespace SqlKata.QueryBuilder
         public Query WhenNot(bool condition, Func<Query, Query> callback)
         {
             return When(condition, null, callback);
-        }
-
-        public Query Where(Action<ConditionBuilder> callback)
-        {
-            callback(WhereBuilder);
-            return this;
-        }
-
-        public Query Having(Action<ConditionBuilder> callback)
-        {
-            callback(HavingBuilder);
-            return this;
         }
 
     }

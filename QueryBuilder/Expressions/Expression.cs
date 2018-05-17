@@ -17,7 +17,7 @@ namespace SqlKata.Expressions
     {
         public object Value { get; set; }
         public LiteralExpression() { }
-        public LiteralExpression(string value)
+        public LiteralExpression(object value)
         {
             this.Value = value;
         }
@@ -181,6 +181,30 @@ namespace SqlKata.Expressions
                 Name = Name,
                 Arguments = Arguments == null ?
                     null : Arguments.Select(x => x.Clone()).ToList(),
+            };
+        }
+    }
+
+    public class NestedExpression : Expression
+    {
+        public Expression Expression { get; set; }
+        public override Expression Clone()
+        {
+            return new NestedExpression
+            {
+                Expression = Expression.Clone()
+            };
+        }
+    }
+
+    public class ListExpression : Expression
+    {
+        public List<Expression> Expressions { get; set; }
+        public override Expression Clone()
+        {
+            return new ListExpression
+            {
+                Expressions = Expressions == null ? null : Expressions.Select(x => x.Clone()).ToList()
             };
         }
     }

@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SqlKata.Expressions;
 
 namespace SqlKata.QueryBuilder
 {
     public class ConditionBuilder
     {
-        private Expression current = new TrueExpression();
+        private Expression current = null;
 
         private bool _isOr = false;
         private bool _isNot = false;
@@ -54,7 +55,14 @@ namespace SqlKata.QueryBuilder
                 expression = Conditions.Not(expression);
             }
 
-            current = isOr ? Conditions.Or(current, expression) : Conditions.And(current, expression);
+            if (current is null)
+            {
+                current = expression;
+            }
+            else
+            {
+                current = isOr ? Conditions.Or(current, expression) : Conditions.And(current, expression);
+            }
 
             return this;
         }
@@ -133,8 +141,8 @@ namespace SqlKata.QueryBuilder
             return Where(new BooleanExpression
             {
                 Left = new IdentifierExpression(column),
-                Operator = "IS",
-                Right = new ConstantExpression { Value = "NULL" }
+                Operator = "is",
+                Right = new ConstantExpression { Value = "null" }
             });
         }
 
@@ -160,6 +168,79 @@ namespace SqlKata.QueryBuilder
                 Left = new IdentifierExpression(left),
                 Operator = op,
                 Right = new IdentifierExpression(right),
+            });
+        }
+
+        public ConditionBuilder WhereBetween(string column, object lower, object upper)
+        {
+            return Where(new BooleanExpression
+            {
+                Left = new IdentifierExpression(column),
+                Operator = "between",
+                Right = new BooleanExpression
+                {
+                    Left = new LiteralExpression(lower),
+                    Operator = "and",
+                    Right = new LiteralExpression(upper)
+                }
+            });
+        }
+
+        public ConditionBuilder WhereIn(string column, IEnumerable<Expression> expressions)
+        {
+            // transform it to falsy expression in case no elements were provided
+            if (!expressions.Any())
+            {
+                return Where(new BooleanExpression
+                {
+                    Left = new ConstantExpression("1"),
+                    Operator = "=",
+                    Right = new ConstantExpression("0")
+                });
+            }
+
+            return Where(new BooleanExpression
+            {
+                Left = new IdentifierExpression(column),
+                Operator = "in",
+                Right = new ListExpression
+                {
+                    Expressions = expressions.ToList()
+                }
+            });
+        }
+
+        public ConditionBuilder WhereIn(string column, Query query)
+        {
+            return Where(new BooleanExpression
+            {
+                Left = new IdentifierExpression(column),
+                Operator = "in",
+                Right = new QueryExpression
+                {
+                    Query = query
+                }
+            });
+        }
+
+        public ConditionBuilder WhereExists(string column, Query query)
+        {
+            return Where(new BooleanExpression
+            {
+                Left = new IdentifierExpression(column),
+                Operator = "exists",
+                Right = new QueryExpression
+                {
+                    Query = query
+                }
+            });
+        }
+
+        public ConditionBuilder Where(Func<ConditionBuilder, ConditionBuilder> callback)
+        {
+            return Where(new NestedExpression
+            {
+                Expression = callback(new ConditionBuilder()).Evaluate()
             });
         }
 

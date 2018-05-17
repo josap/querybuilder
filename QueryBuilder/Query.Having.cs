@@ -1,7 +1,17 @@
+using System;
+
 namespace SqlKata.QueryBuilder
 {
     public static class QueryHaving
     {
+        public static Query Having(this Query query, Func<ConditionBuilder, ConditionBuilder> callback)
+        {
+            return query.AddComponent("having", new ConditionClause
+            {
+                Expression = callback(new ConditionBuilder()).Evaluate()
+            });
+        }
+
         public static Query Having(this Query query, string column, string op, object value)
         {
             return query.Having(q => q.Where(column, op, value));

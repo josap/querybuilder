@@ -6,6 +6,7 @@
 config.json
 npm-debug.log
 example
+Program
 
 # User-specific files
 *.suo

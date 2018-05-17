@@ -30,7 +30,7 @@ namespace SqlKata.QueryBuilder
 
             var result = new BooleanExpression
             {
-                Operator = "OR",
+                Operator = "or",
                 Left = expressions[0],
                 Right = expressions[1],
             };
@@ -39,7 +39,7 @@ namespace SqlKata.QueryBuilder
             {
                 result.Left = new BooleanExpression
                 {
-                    Operator = "OR",
+                    Operator = "or",
                     Left = result.Left,
                     Right = expressions[i]
                 };
@@ -62,7 +62,7 @@ namespace SqlKata.QueryBuilder
 
             var result = new BooleanExpression
             {
-                Operator = "AND",
+                Operator = "and",
                 Left = expressions[0],
                 Right = expressions[1],
             };
@@ -71,7 +71,7 @@ namespace SqlKata.QueryBuilder
             {
                 result.Left = new BooleanExpression
                 {
-                    Operator = "AND",
+                    Operator = "and",
                     Left = result.Left,
                     Right = expressions[i]
                 };
