@@ -8,18 +8,31 @@ using SqlKata.Expressions;
 namespace SqlKata.QueryBuilder.Compilers
 {
 
-    public partial class Compiler
+    public class Compiler
     {
         public string EngineCode;
+        public bool UpperSyntax = true;
 
         /// The list of bindings for the current compilation
-        protected List<object> bindings = new List<object>();
+        protected List<object> _bindings = new List<object>();
+        public List<object> Bindings
+        {
+            get
+            {
+                return _bindings;
+            }
+        }
 
         protected string OpeningIdentifier = "\"";
         protected string ClosingIdentifier = "\"";
 
         public Compiler()
         {
+        }
+
+        public virtual string FormatKeyword(string input)
+        {
+            return UpperSyntax ? input.ToUpper() : input.ToLower();
         }
 
         public virtual string CompileFalse()
@@ -36,7 +49,7 @@ namespace SqlKata.QueryBuilder.Compilers
         {
             if (expression is LiteralExpression literal)
             {
-                bindings.Add(literal.Value);
+                _bindings.Add(literal.Value);
                 return "?";
             }
 
@@ -77,7 +90,7 @@ namespace SqlKata.QueryBuilder.Compilers
 
             if (expression is NotExpression notExpr)
             {
-                return $"not {CompileExpression(notExpr.Expression)}";
+                return $"not ({CompileExpression(notExpr.Expression)})";
             }
 
             if (expression is QueryExpression queryExpr)
@@ -89,7 +102,7 @@ namespace SqlKata.QueryBuilder.Compilers
             {
                 if (raw.Bindings != null)
                 {
-                    bindings.AddRange(raw.Bindings);
+                    _bindings.AddRange(raw.Bindings);
                 }
 
                 return raw.Expression;
@@ -101,6 +114,12 @@ namespace SqlKata.QueryBuilder.Compilers
                     Select(x => CompileExpression(x));
 
                 return $"{func.Name}(${string.Join(", ", args)})";
+            }
+
+            if (expression is ListExpression list)
+            {
+                var compiled = list.Expressions.Select(e => CompileExpression(e));
+                return $"({string.Join(", ", compiled)})";
             }
 
             throw new InvalidOperationException("No compiler found for expression of type " + expression.GetType().FullName);
@@ -176,7 +195,7 @@ namespace SqlKata.QueryBuilder.Compilers
                .Where(x => !string.IsNullOrEmpty(x))
                .ToList();
 
-            string sql = "select " + string.Join(" ", results);
+            string sql = $"{FormatKeyword("select")} " + string.Join(" ", results);
 
             // Handle UNION, EXCEPT and INTERSECT
             if (query.GetComponents("combine", EngineCode).Any())
@@ -191,7 +210,7 @@ namespace SqlKata.QueryBuilder.Compilers
                 {
                     if (clause is Combine combineClause)
                     {
-                        var combineOperator = combineClause.Operation.ToUpper() + " " + (combineClause.All ? "ALL " : "");
+                        var combineOperator = FormatKeyword(combineClause.Operation) + " " + (combineClause.All ? FormatKeyword("all ") : "");
 
                         var compiled = CompileSelect(combineClause.Query);
 
@@ -227,12 +246,12 @@ namespace SqlKata.QueryBuilder.Compilers
 
             if (!columns.Any())
             {
-                return query.IsDistinct ? "distinct *" : "*";
+                return query.IsDistinct ? FormatKeyword("distinct *") : "*";
             }
 
             var sql = columns.Select(x => CompileColumn(x));
 
-            return (query.IsDistinct ? "distinct " : "") + sql;
+            return (query.IsDistinct ? FormatKeyword("distinct ") : "") + sql;
         }
 
         public virtual string CompileFrom(Query query)
@@ -329,7 +348,7 @@ namespace SqlKata.QueryBuilder.Compilers
         {
             if (query.GetOneComponent("limit", EngineCode) is LimitOffset limitOffset && limitOffset.HasLimit())
             {
-                bindings.Add(limitOffset.Limit);
+                _bindings.Add(limitOffset.Limit);
                 return "limit ?";
             }
 
@@ -340,7 +359,7 @@ namespace SqlKata.QueryBuilder.Compilers
         {
             if (query.GetOneComponent("limit", EngineCode) is LimitOffset limitOffset && limitOffset.HasOffset())
             {
-                bindings.Add(limitOffset.Offset);
+                _bindings.Add(limitOffset.Offset);
                 return "offset ?";
             }
 

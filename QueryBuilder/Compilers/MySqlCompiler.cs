@@ -19,7 +19,7 @@ namespace SqlKata.QueryBuilder.Compilers
                 return "";
             }
 
-            bindings.Add(limitOffset.Offset);
+            _bindings.Add(limitOffset.Offset);
 
             // MySql will not accept offset without limit
             // So we will put a large number to avoid this error

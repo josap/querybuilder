@@ -199,7 +199,7 @@ namespace SqlKata.Expressions
 
     public class ListExpression : Expression
     {
-        public List<Expression> Expressions { get; set; }
+        public IEnumerable<Expression> Expressions { get; set; }
         public override Expression Clone()
         {
             return new ListExpression

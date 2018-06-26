@@ -31,6 +31,14 @@ namespace SqlKata.QueryBuilder
             }
         }
 
+        private Dictionary<string, string> reversableOperator = new Dictionary<string, string>
+        {
+            {"in", "not in"},
+            {"between", "not between"},
+            {"is", "is not"},
+            {"exists", "not exists"},
+        };
+
         public ConditionBuilder Or()
         {
             _isOr = true;
@@ -50,9 +58,20 @@ namespace SqlKata.QueryBuilder
         protected ConditionBuilder Where(Expression expression)
         {
 
+
             if (isNot)
             {
-                expression = Conditions.Not(expression);
+                // try to reverse the expression operator if possible to avoid long not expressions
+                // i.e. "col is not null" instead of "not (col is null)"
+                if (expression is BooleanExpression expr && reversableOperator.ContainsKey(expr.Operator))
+                {
+                    expr.Operator = reversableOperator[expr.Operator];
+                    expression = expr;
+                }
+                else
+                {
+                    expression = Conditions.Not(expression);
+                }
             }
 
             if (current is null)
@@ -158,7 +177,7 @@ namespace SqlKata.QueryBuilder
 
         public ConditionBuilder OrWhereNotNull(string column)
         {
-            return Not().WhereNull(column);
+            return Or().Not().WhereNull(column);
         }
 
         public ConditionBuilder WhereColumns(string left, string op, string right)
@@ -169,6 +188,21 @@ namespace SqlKata.QueryBuilder
                 Operator = op,
                 Right = new IdentifierExpression(right),
             });
+        }
+
+        public ConditionBuilder OrWhereColumns(string left, string op, string right)
+        {
+            return Or().WhereColumns(left, op, right);
+        }
+
+        public ConditionBuilder WhereNotColumns(string left, string op, string right)
+        {
+            return Not().WhereColumns(left, op, right);
+        }
+
+        public ConditionBuilder OrWhereNotColumns(string left, string op, string right)
+        {
+            return Or().Not().WhereColumns(left, op, right);
         }
 
         public ConditionBuilder WhereBetween(string column, object lower, object upper)
@@ -186,10 +220,25 @@ namespace SqlKata.QueryBuilder
             });
         }
 
-        public ConditionBuilder WhereIn(string column, IEnumerable<Expression> expressions)
+        public ConditionBuilder WhereNotBetween(string column, object lower, object upper)
+        {
+            return Not().WhereBetween(column, lower, upper);
+        }
+
+        public ConditionBuilder OrWhereBetween(string column, object lower, object upper)
+        {
+            return Or().WhereBetween(column, lower, upper);
+        }
+
+        public ConditionBuilder OrWhereNotBetween(string column, object lower, object upper)
+        {
+            return Or().Not().WhereBetween(column, lower, upper);
+        }
+
+        public ConditionBuilder WhereIn<T>(string column, IEnumerable<T> values)
         {
             // transform it to falsy expression in case no elements were provided
-            if (!expressions.Any())
+            if (!values.Any())
             {
                 return Where(new BooleanExpression
                 {
@@ -205,9 +254,24 @@ namespace SqlKata.QueryBuilder
                 Operator = "in",
                 Right = new ListExpression
                 {
-                    Expressions = expressions.ToList()
+                    Expressions = values.Select(v => new LiteralExpression(v)).ToList()
                 }
             });
+        }
+
+        public ConditionBuilder OrWhereIn<T>(string column, IEnumerable<T> values)
+        {
+            return Or().WhereIn(column, values);
+        }
+
+        public ConditionBuilder WhereNotIn<T>(string column, IEnumerable<T> values)
+        {
+            return Not().WhereIn(column, values);
+        }
+
+        public ConditionBuilder OrWhereNotIn<T>(string column, IEnumerable<T> values)
+        {
+            return Or().Not().WhereIn(column, values);
         }
 
         public ConditionBuilder WhereIn(string column, Query query)
@@ -223,6 +287,21 @@ namespace SqlKata.QueryBuilder
             });
         }
 
+        public ConditionBuilder WhereNot(string column, Query query)
+        {
+            return Not().WhereIn(column, query);
+        }
+
+        public ConditionBuilder OrWhereIn(string column, Query query)
+        {
+            return Or().WhereIn(column, query);
+        }
+
+        public ConditionBuilder OrWhereNotIn(string column, Query query)
+        {
+            return Or().Not().WhereIn(column, query);
+        }
+
         public ConditionBuilder WhereExists(string column, Query query)
         {
             return Where(new BooleanExpression
@@ -236,12 +315,42 @@ namespace SqlKata.QueryBuilder
             });
         }
 
+        public ConditionBuilder WhereNotExists(string column, Query query)
+        {
+            return Not().WhereExists(column, query);
+        }
+
+        public ConditionBuilder OrWhereExists(string column, Query query)
+        {
+            return Or().WhereExists(column, query);
+        }
+
+        public ConditionBuilder OrWhereNotExists(string column, Query query)
+        {
+            return Or().Not().WhereExists(column, query);
+        }
+
         public ConditionBuilder Where(Func<ConditionBuilder, ConditionBuilder> callback)
         {
             return Where(new NestedExpression
             {
                 Expression = callback(new ConditionBuilder()).Evaluate()
             });
+        }
+
+        public ConditionBuilder WhereNot(Func<ConditionBuilder, ConditionBuilder> callback)
+        {
+            return Not().Where(callback);
+        }
+
+        public ConditionBuilder OrWhere(Func<ConditionBuilder, ConditionBuilder> callback)
+        {
+            return Or().Where(callback);
+        }
+
+        public ConditionBuilder OrWhereNot(Func<ConditionBuilder, ConditionBuilder> callback)
+        {
+            return Or().Not().Where(callback);
         }
 
     }

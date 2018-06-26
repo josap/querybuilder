@@ -23,12 +23,12 @@ build_script:
 test: off
 artifacts:
   - path: .\.nupkgs\*.nupkg
-  
+
 deploy:
 - provider: NuGet
   server: https://www.myget.org/F/sqlkata/api/v2/package
   on:
-    branch: 
+    branch:
       - master
   api_key:
     secure: /hqoLdVFa9YcKAGHHsOfe43vAfVU1hPNpUyG+Qd9PQZIAOli32cBXYTP6vq12xKq
