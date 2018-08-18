@@ -47,7 +47,7 @@ namespace SqlKata
             typeof(ushort),
             typeof(ulong),
         };
-        
+
         public override string ToString()
         {
             return Helper.ReplaceAll(RawSql, "?", i =>
@@ -85,7 +85,7 @@ namespace SqlKata
 
             });
         }
-        
+
         public static SqlResult operator +(SqlResult a, SqlResult b)
         {
             var sql = a.RawSql + ";" + b.RawSql;

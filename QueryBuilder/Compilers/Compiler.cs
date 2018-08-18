@@ -160,6 +160,7 @@ namespace SqlKata.Compilers
                 + " SET " + string.Join(", ", parts)
                 + where;
 
+
             return ctx;
         }
 
