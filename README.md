@@ -42,12 +42,10 @@ PM> Install-Package SqlKata
 
 ```cs
 Query query = new Query();
-query.Select("Id", "Name").From("MyTable").WhereContains("Name", "John").OrderBy("Name").AddRowNumberColumn("RowNumber");
+query.Select("Id", "Name").From("MyTable").OrderBy("Name").AddRowNumberColumn("RowNumber");
 SqlKata.Compilers.SqlServerCompiler sqlServerCompiler = new SqlKata.Compilers.SqlServerCompiler();
 string sqlResult = sqlServerCompiler.Compile(query).ToString();
-//sqlResult:
-//SELECT ROW_NUMBER() OVER (ORDER BY [Name]) AS [RowNumber], [Id], [Name]
-//FROM [MyTable] WHERE LOWER([Name]) like '%john%'
+//sqlResult -> SELECT ROW_NUMBER() OVER (ORDER BY [Name]) AS [RowNumber], [Id], [Name] FROM [MyTable]
 ```
 
 ### Setup Connection
