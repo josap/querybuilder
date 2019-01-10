@@ -17,6 +17,39 @@ namespace SqlKata.Compilers
 
         protected override SqlResult CompileSelectQuery(Query query)
         {
+        
+            SqlResult ctx;
+            string order;
+
+            //New 2019-01-10
+            if (query.HasComponent("rownumber"))
+            {
+                if (!query.HasComponent("order"))
+                {
+                    throw new InvalidOperationException("No Order By clause found for the RowNumber column.");
+                }
+                query = query.Clone();
+
+                ctx = new SqlResult {
+                    Query = query,
+                };
+
+                if (!query.HasComponent("select")) {
+                    query.Select("*");
+                }
+
+                order = CompileOrders(ctx) ?? "ORDER BY (SELECT 0)";
+
+                var columnName = query.GetOneComponent<RowRumber>("rownumber").Column;
+
+                query.SelectRaw($"ROW_NUMBER() OVER ({order}) AS [{columnName}]", ctx.Bindings.ToArray());
+
+                query.ClearComponent("order");
+
+                return base.CompileSelectQuery(query);
+
+            }
+            
             if (!UseLegacyPagination || !query.HasOffset())
             {
                 return base.CompileSelectQuery(query);
@@ -24,7 +57,7 @@ namespace SqlKata.Compilers
 
             query = query.Clone();
 
-            var ctx = new SqlResult
+            ctx = new SqlResult
             {
                 Query = query,
             };
@@ -38,7 +71,7 @@ namespace SqlKata.Compilers
                 query.Select("*");
             }
 
-            var order = CompileOrders(ctx) ?? "ORDER BY (SELECT 0)";
+            order = CompileOrders(ctx) ?? "ORDER BY (SELECT 0)";
 
             query.SelectRaw($"ROW_NUMBER() OVER ({order}) AS [row_num]", ctx.Bindings.ToArray());
 
