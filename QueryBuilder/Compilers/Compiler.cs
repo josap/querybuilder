@@ -419,6 +419,13 @@ namespace SqlKata.Compilers
                 .Select(x => CompileColumn(ctx, x))
                 .ToList();
 
+            //New 2019-01-10
+            if (ctx.Query.HasComponent("rownumber")) {
+                var column = columns[columns.Count - 1];
+                columns.RemoveAt(columns.Count - 1);
+                columns.Insert(0, column);
+            }
+            
             var distinct = ctx.Query.IsDistinct ? "DISTINCT " : "";
 
             var select = columns.Any() ? string.Join(", ", columns) : "*";
