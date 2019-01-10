@@ -288,6 +288,25 @@ namespace SqlKata
             return this;
         }
 
+        //New 2019-01-10
+        /// <summary>
+        /// RowNumber's column name will be 'Row'
+        /// </summary>
+        public Query AddRowNumberColumn()
+        {
+            return AddRowNumberColumn("Row");
+        }
+
+        //New 2019-01-10
+        public Query AddRowNumberColumn(string RowNumberColumnName) 
+        {
+                AddComponent("rownumber", new RowRumber {
+                    Column = RowNumberColumnName
+                });
+
+            return this;
+        }
+        
         public override Query NewQuery()
         {
             return new Query();
