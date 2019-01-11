@@ -292,13 +292,13 @@ namespace SqlKata
         /// <summary>
         /// RowNumber's column name will be 'Row'
         /// </summary>
-        public Query AddRowNumberColumn()
+        public Query AddRowNumber()
         {
-            return AddRowNumberColumn("Row");
+            return AddRowNumber("Row");
         }
 
         //New 2019-01-10
-        public Query AddRowNumberColumn(string RowNumberColumnName) 
+        public Query AddRowNumber(string RowNumberColumnName) 
         {
                 AddComponent("rownumber", new RowRumber {
                     Column = RowNumberColumnName
